@@ -1,0 +1,762 @@
+==================
+Data structure with LIKEDS and no END-DS
+==================
+
+**FREE
+dcl-ds head likeds(line);
+dcl-ds ext extname('ORDHDR');
+dcl-ds plain qualified;
+  a int(10);
+end-ds;
+
+---
+
+(source_file
+  (fully_free_marker)
+  (data_structure
+    (data_structure_start
+      (keyword)
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (identifier)))))))
+  (data_structure
+    (data_structure_start
+      (keyword)
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (string)))))))
+  (data_structure
+    (data_structure_start
+      (keyword)
+      (identifier)
+      (expression
+        (identifier)))
+    (subfield_declaration
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (number))))))
+    (data_structure_end
+      (keyword))))
+
+==================
+END-DS, END-PR and END-PI on the declaration line
+==================
+
+**FREE
+dcl-ds f extname('F') end-ds;
+dcl-pr q extproc('Q') end-pr;
+dcl-proc p;
+  dcl-pi *n ind end-pi;
+end-proc;
+
+---
+
+(source_file
+  (fully_free_marker)
+  (data_structure
+    (data_structure_start
+      (keyword)
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (string)))))
+      (keyword)))
+  (prototype
+    (prototype_start
+      (keyword)
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (string)))))
+      (keyword)))
+  (procedure
+    (procedure_start
+      (keyword)
+      (identifier))
+    (procedure_interface
+      (interface_start
+        (keyword)
+        (special_value)
+        (expression
+          (identifier))
+        (keyword)))
+    (procedure_end
+      (keyword))))
+
+==================
+END-xx followed by a name
+==================
+
+**FREE
+dcl-ds p qualified;
+  a int(10);
+end-ds p;
+dcl-pr q extproc('Q');
+  b int(10);
+end-pr q;
+
+---
+
+(source_file
+  (fully_free_marker)
+  (data_structure
+    (data_structure_start
+      (keyword)
+      (identifier)
+      (expression
+        (identifier)))
+    (subfield_declaration
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (number))))))
+    (data_structure_end
+      (keyword)
+      (identifier)))
+  (prototype
+    (prototype_start
+      (keyword)
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (string))))))
+    (parameter_declaration
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (number))))))
+    (prototype_end
+      (keyword)
+      (identifier))))
+
+==================
+Subroutine with a special name
+==================
+
+**FREE
+begsr *pssr;
+  dsply 'failed';
+endsr '*CANCL';
+begsr *inzsr;
+endsr;
+
+---
+
+(source_file
+  (fully_free_marker)
+  (subroutine
+    (keyword)
+    (special_value)
+    (operation_statement
+      (opcode
+        (identifier))
+      (expression
+        (string)))
+    (keyword)
+    (string))
+  (subroutine
+    (keyword)
+    (special_value)
+    (keyword)))
+
+==================
+IN and NOT IN operators
+==================
+
+**FREE
+if i in %list(1 : 3 : 5);
+  j = 1;
+endif;
+if i not in %list(1 : 3 : 5);
+  j = 2;
+endif;
+if not INPUTS_EXISTS;
+  j = 3;
+endif;
+
+---
+
+(source_file
+  (fully_free_marker)
+  (if_statement
+    (keyword)
+    (expression
+      (binary_expression
+        (expression
+          (identifier))
+        (operator)
+        (expression
+          (call_expression
+            (known_builtin_name)
+            (argument_list
+              (expression
+                (number))
+              (expression
+                (number))
+              (expression
+                (number)))))))
+    (assignment_statement
+      (identifier)
+      (assignment_operator)
+      (expression
+        (number)))
+    (keyword))
+  (if_statement
+    (keyword)
+    (expression
+      (binary_expression
+        (expression
+          (identifier))
+        (operator)
+        (expression
+          (call_expression
+            (known_builtin_name)
+            (argument_list
+              (expression
+                (number))
+              (expression
+                (number))
+              (expression
+                (number)))))))
+    (assignment_statement
+      (identifier)
+      (assignment_operator)
+      (expression
+        (number)))
+    (keyword))
+  (if_statement
+    (keyword)
+    (expression
+      (unary_expression
+        (operator)
+        (expression
+          (identifier))))
+    (assignment_statement
+      (identifier)
+      (assignment_operator)
+      (expression
+        (number)))
+    (keyword)))
+
+==================
+Date, time, UCS-2 and binary literals
+==================
+
+**FREE
+dcl-s d date inz(d'2003-01-02');
+dcl-s t time inz(t'12.30.00');
+dcl-s z timestamp inz(z'2003-01-02-12.30.00.000000');
+dcl-s m char(1) inz(b'01000001');
+dcl-s w ucs2(5) inz(u'0041');
+
+---
+
+(source_file
+  (fully_free_marker)
+  (declaration_statement
+    (named_declaration
+      (declaration_keyword)
+      (identifier)
+      (expression
+        (identifier))
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (typed_literal)))))))
+  (declaration_statement
+    (named_declaration
+      (declaration_keyword)
+      (identifier)
+      (expression
+        (identifier))
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (typed_literal)))))))
+  (declaration_statement
+    (named_declaration
+      (declaration_keyword)
+      (identifier)
+      (expression
+        (identifier))
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (typed_literal)))))))
+  (declaration_statement
+    (named_declaration
+      (declaration_keyword)
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (number)))))
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (binary_string)))))))
+  (declaration_statement
+    (named_declaration
+      (declaration_keyword)
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (number)))))
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (typed_literal))))))))
+
+==================
+Date and time format values ending in a dash
+==================
+
+**FREE
+ctl-opt dftactgrp(*no) datfmt(*iso-) timfmt(*hms-);
+
+---
+
+(source_file
+  (fully_free_marker)
+  (declaration_statement
+    (control_statement
+      (declaration_keyword)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (special_value)))))
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (special_value)))))
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (special_value))))))))
+
+==================
+Numbers
+==================
+
+**FREE
+dcl-s p packed(5:2);
+dcl-s f float(8);
+dcl-s c clob(1M);
+p = .25;
+p -= .05;
+f = 1.5E10;
+
+---
+
+(source_file
+  (fully_free_marker)
+  (declaration_statement
+    (named_declaration
+      (declaration_keyword)
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (number))
+            (expression
+              (number)))))))
+  (declaration_statement
+    (named_declaration
+      (declaration_keyword)
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (number)))))))
+  (declaration_statement
+    (named_declaration
+      (declaration_keyword)
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (number)))))))
+  (assignment_statement
+    (identifier)
+    (assignment_operator)
+    (expression
+      (number)))
+  (assignment_statement
+    (identifier)
+    (assignment_operator)
+    (expression
+      (number)))
+  (assignment_statement
+    (identifier)
+    (assignment_operator)
+    (expression
+      (number))))
+
+==================
+Array element with a variable index as assignment target
+==================
+
+**FREE
+m(idx) = 1;
+d(i).k = 'x';
+d(i).n += 1;
+d(1).k = 'y';
+
+---
+
+(source_file
+  (fully_free_marker)
+  (assignment_statement
+    (indexed_variable
+      (identifier)
+      (opcode_extender))
+    (assignment_operator)
+    (expression
+      (number)))
+  (assignment_statement
+    (member_expression
+      (indexed_variable
+        (identifier)
+        (opcode_extender))
+      (identifier))
+    (assignment_operator)
+    (expression
+      (string)))
+  (assignment_statement
+    (member_expression
+      (indexed_variable
+        (identifier)
+        (opcode_extender))
+      (identifier))
+    (assignment_operator)
+    (expression
+      (number)))
+  (assignment_statement
+    (member_expression
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (number)))))
+      (identifier))
+    (assignment_operator)
+    (expression
+      (string))))
+
+==================
+All elements of an array
+==================
+
+**FREE
+a(*) = 1;
+i = %lookup('x' : d(*).k);
+sorta(a) d(*).k;
+eval-corr d1(*) = d2(*);
+
+---
+
+(source_file
+  (fully_free_marker)
+  (assignment_statement
+    (call_expression
+      (identifier)
+      (all_elements))
+    (assignment_operator)
+    (expression
+      (number)))
+  (assignment_statement
+    (identifier)
+    (assignment_operator)
+    (expression
+      (call_expression
+        (known_builtin_name)
+        (argument_list
+          (expression
+            (string))
+          (expression
+            (member_expression
+              (expression
+                (call_expression
+                  (identifier)
+                  (all_elements)))
+              (identifier)))))))
+  (operation_statement
+    (opcode
+      (identifier))
+    (opcode_extender)
+    (expression
+      (member_expression
+        (expression
+          (call_expression
+            (identifier)
+            (all_elements)))
+        (identifier))))
+  (assignment_statement
+    (keyword)
+    (call_expression
+      (identifier)
+      (all_elements))
+    (assignment_operator)
+    (expression
+      (call_expression
+        (identifier)
+        (all_elements)))))
+
+==================
+Star-n subfield
+==================
+
+**FREE
+dcl-ds ds qualified;
+  *n char(10);
+  a int(10);
+end-ds;
+
+---
+
+(source_file
+  (fully_free_marker)
+  (data_structure
+    (data_structure_start
+      (keyword)
+      (identifier)
+      (expression
+        (identifier)))
+    (subfield_declaration
+      (special_value)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (number))))))
+    (subfield_declaration
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (number))))))
+    (data_structure_end
+      (keyword))))
+
+==================
+Parenthesised first operand
+==================
+
+**FREE
+chain (a : b) file;
+chain (a) file;
+chain(ne) (a : b) file;
+setll (a) file;
+dsply (msg + m) '*ext' reply;
+foo(a : b);
+
+---
+
+(source_file
+  (fully_free_marker)
+  (operation_statement
+    (call_expression
+      (identifier)
+      (argument_list
+        (expression
+          (identifier))
+        (expression
+          (identifier))))
+    (expression
+      (identifier)))
+  (operation_statement
+    (opcode
+      (identifier))
+    (opcode_extender)
+    (expression
+      (identifier)))
+  (operation_statement
+    (opcode
+      (identifier))
+    (opcode_extender)
+    (key_list
+      (expression
+        (identifier))
+      (expression
+        (identifier)))
+    (expression
+      (identifier)))
+  (operation_statement
+    (opcode
+      (identifier))
+    (opcode_extender)
+    (expression
+      (identifier)))
+  (operation_statement
+    (call_expression
+      (identifier)
+      (argument_list
+        (expression
+          (binary_expression
+            (expression
+              (identifier))
+            (operator)
+            (expression
+              (identifier))))))
+    (expression
+      (string))
+    (expression
+      (identifier)))
+  (expression_statement
+    (call_expression
+      (identifier)
+      (argument_list
+        (expression
+          (identifier))
+        (expression
+          (identifier))))))
+
+==================
+Subtraction without spaces
+==================
+
+**FREE
+j = l-%len(w);
+j = l-1;
+
+---
+
+(source_file
+  (fully_free_marker)
+  (assignment_statement
+    (identifier)
+    (assignment_operator)
+    (expression
+      (binary_expression
+        (expression
+          (identifier))
+        (operator)
+        (expression
+          (call_expression
+            (known_builtin_name)
+            (argument_list
+              (expression
+                (identifier))))))))
+  (assignment_statement
+    (identifier)
+    (assignment_operator)
+    (expression
+      (binary_expression
+        (expression
+          (identifier))
+        (operator)
+        (expression
+          (number))))))
+
+==================
+Empty statement
+==================
+
+**FREE
+dcl-ds config likeds(x) inz(*likeds);;
+i = 1;
+;
+
+---
+
+(source_file
+  (fully_free_marker)
+  (data_structure
+    (data_structure_start
+      (keyword)
+      (identifier)
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (identifier)))))
+      (expression
+        (call_expression
+          (identifier)
+          (argument_list
+            (expression
+              (special_value)))))))
+  (empty_statement)
+  (assignment_statement
+    (identifier)
+    (assignment_operator)
+    (expression
+      (number)))
+  (empty_statement))
+
+==================
+DOS end of file
+==================
+
+**FREE
+i = 1;
+
+
+---
+
+(source_file
+  (fully_free_marker)
+  (assignment_statement
+    (identifier)
+    (assignment_operator)
+    (expression
+      (number))))

@@ -2,6 +2,10 @@
 
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+- RPGLE: accept valid free-form constructs that gave `ERROR` or `MISSING` nodes (see `test/corpus/free_form_constructs.txt`).
+
 ## [0.1.0]
 
 - Initial Tree-sitter parsers for ILE RPG, RPG/400, ILE COBOL, CL, CMD, MI,

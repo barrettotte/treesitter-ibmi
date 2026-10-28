@@ -44,13 +44,16 @@ module.exports = grammar({
     $._fixed_newline,
   ],
 
-  extras: ($) => [/\s/, $.comment],
+  extras: ($) => [/\s/, /\x1a/, $.comment],
 
   word: ($) => $.identifier,
 
   conflicts: ($) => [
     [$.opcode, $.expression],
     [$.source_file, $._body_item],
+    [$.data_structure],
+    [$.opcode, $.indexed_variable],
+    [$.operation_statement, $.expression],
   ],
 
   rules: {
@@ -277,10 +280,23 @@ module.exports = grammar({
       ),
 
     prototype: ($) =>
+      choice(
+        seq(
+          field("start", $.prototype_start),
+          repeat($.parameter_declaration),
+          field("end", $.prototype_end),
+        ),
+        field("start", alias($.prototype_inline, $.prototype_start)),
+      ),
+
+    prototype_inline: ($) =>
       seq(
-        field("start", $.prototype_start),
-        repeat($.parameter_declaration),
-        field("end", $.prototype_end),
+        alias(caseInsensitive("DCL-PR"), $.keyword),
+        field("name", $._name),
+        repeat($._statement_atom),
+        alias(caseInsensitive("END-PR"), $.keyword),
+        optional(field("name", $._name)),
+        alias($.terminator, ";"),
       ),
 
     prototype_start: ($) =>
@@ -292,13 +308,30 @@ module.exports = grammar({
       ),
 
     prototype_end: ($) =>
-      seq(alias(caseInsensitive("END-PR"), $.keyword), alias($.terminator, ";")),
+      seq(
+        alias(caseInsensitive("END-PR"), $.keyword),
+        optional(field("name", $._name)),
+        alias($.terminator, ";"),
+      ),
 
     procedure_interface: ($) =>
+      choice(
+        seq(
+          field("start", $.interface_start),
+          repeat($.parameter_declaration),
+          field("end", $.interface_end),
+        ),
+        field("start", alias($.interface_inline, $.interface_start)),
+      ),
+
+    interface_inline: ($) =>
       seq(
-        field("start", $.interface_start),
-        repeat($.parameter_declaration),
-        field("end", $.interface_end),
+        alias(caseInsensitive("DCL-PI"), $.keyword),
+        field("name", $._name),
+        repeat($._statement_atom),
+        alias(caseInsensitive("END-PI"), $.keyword),
+        optional(field("name", $._name)),
+        alias($.terminator, ";"),
       ),
 
     interface_start: ($) =>
@@ -310,13 +343,33 @@ module.exports = grammar({
       ),
 
     interface_end: ($) =>
-      seq(alias(caseInsensitive("END-PI"), $.keyword), alias($.terminator, ";")),
+      seq(
+        alias(caseInsensitive("END-PI"), $.keyword),
+        optional(field("name", $._name)),
+        alias($.terminator, ";"),
+      ),
 
     data_structure: ($) =>
+      choice(
+        seq(
+          field("start", $.data_structure_start),
+          repeat($.subfield_declaration),
+          field("end", $.data_structure_end),
+        ),
+        // DCL-DS x LIKEDS(y) EXTNAME('F') ... END-DS; on one line
+        field("start", alias($.data_structure_inline, $.data_structure_start)),
+        // DCL-DS x LIKEDS(y); with no subfields and no END-DS
+        prec.dynamic(-1, field("start", $.data_structure_start)),
+      ),
+
+    data_structure_inline: ($) =>
       seq(
-        field("start", $.data_structure_start),
-        repeat($.subfield_declaration),
-        field("end", $.data_structure_end),
+        alias(caseInsensitive("DCL-DS"), $.keyword),
+        field("name", $._name),
+        repeat($._statement_atom),
+        alias(caseInsensitive("END-DS"), $.keyword),
+        optional(field("name", $._name)),
+        alias($.terminator, ";"),
       ),
 
     data_structure_start: ($) =>
@@ -328,7 +381,11 @@ module.exports = grammar({
       ),
 
     data_structure_end: ($) =>
-      seq(alias(caseInsensitive("END-DS"), $.keyword), alias($.terminator, ";")),
+      seq(
+        alias(caseInsensitive("END-DS"), $.keyword),
+        optional(field("name", $._name)),
+        alias($.terminator, ";"),
+      ),
 
     enumeration: ($) =>
       seq(
@@ -394,7 +451,7 @@ module.exports = grammar({
     subfield_declaration: ($) =>
       seq(
         optional(alias(caseInsensitive("DCL-SUBF"), $.keyword)),
-        field("name", $.identifier),
+        field("name", $._name),
         repeat($._statement_atom),
         alias($.terminator, ";"),
       ),
@@ -419,6 +476,7 @@ module.exports = grammar({
         $.assignment_statement,
         $.expression_statement,
         $.operation_statement,
+        $.empty_statement,
       ),
 
     embedded_sql_statement: ($) =>
@@ -549,11 +607,11 @@ module.exports = grammar({
     subroutine: ($) =>
       seq(
         alias(caseInsensitive("BEGSR"), $.keyword),
-        field("name", $.identifier),
+        field("name", $._name),
         alias($.terminator, ";"),
         repeat($._body_item),
         alias(caseInsensitive("ENDSR"), $.keyword),
-        optional(field("name", $.identifier)),
+        optional(choice(field("name", $._name), field("return_point", $.string))),
         alias($.terminator, ";"),
       ),
 
@@ -568,14 +626,26 @@ module.exports = grammar({
       )),
 
     operation_statement: ($) =>
-      seq(
-        field("opcode", $.opcode),
-        optional(field("extender", $.opcode_extender)),
-        repeat(field("argument", $._statement_atom)),
-        alias($.terminator, ";"),
+      choice(
+        seq(
+          field("opcode", $.opcode),
+          optional(field("extender", $.opcode_extender)),
+          repeat(field("argument", $._statement_atom)),
+          alias($.terminator, ";"),
+        ),
+        // `chain (a : b) file;`, `dsply (msg) '*ext' reply;`: the parenthesised first operand
+        // lexes as a call, and the opcode is then the call's function.
+        seq(
+          field("call", $.call_expression),
+          repeat1(field("argument", $._statement_atom)),
+          alias($.terminator, ";"),
+        ),
       ),
 
-    expression_statement: ($) => seq($.call_expression, alias($.terminator, ";")),
+    // a lone `;`, also left behind by `...;;`
+    empty_statement: ($) => alias($.terminator, ";"),
+
+    expression_statement: ($) => prec.dynamic(1, seq($.call_expression, alias($.terminator, ";"))),
 
     opcode: ($) => $.identifier,
 
@@ -584,6 +654,7 @@ module.exports = grammar({
     _statement_atom: ($) =>
       choice(
         $.compiler_directive,
+        $.key_list,
         $.expression,
         $.colon,
       ),
@@ -600,6 +671,8 @@ module.exports = grammar({
         $.special_value,
         $.string,
         $.hex_string,
+        $.binary_string,
+        $.typed_literal,
         $.number,
         $.identifier,
       ),
@@ -617,7 +690,7 @@ module.exports = grammar({
           3,
           seq(
             field("left", $.expression),
-            field("operator", alias($.comparison_operator, $.operator)),
+            field("operator", alias(choice($.comparison_operator, $.in_operator, $.not_in_operator), $.operator)),
             field("right", $.expression),
           ),
         ),
@@ -645,16 +718,27 @@ module.exports = grammar({
     comparison_operator: () =>
       token(prec(-1, choice("=", "<>", ">", ">=", "<", "<="))),
 
+    in_operator: () => choice("IN", "in", "In", "iN"),
+
+    // the trailing blank keeps `not INPUTS_EXISTS` from lexing as `not IN` + `PUTS_EXISTS`
+    not_in_operator: () => token(/[Nn][Oo][Tt][ \t]+[Ii][Nn][ \t]/),
+
     unary_expression: ($) =>
       prec(7, seq(field("operator", alias(choice(caseInsensitive("NOT"), "+", "-"), $.operator)), field("argument", $.expression))),
 
     call_expression: ($) =>
-      prec(9, seq(field("function", choice($.identifier, $.known_builtin_name, $.builtin_name, $.special_value, $.member_expression)), field("arguments", $.argument_list))),
+      prec(9, seq(field("function", choice($.identifier, $.known_builtin_name, $.builtin_name, $.special_value, $.member_expression)), field("arguments", choice($.argument_list, $.all_elements)))),
 
     member_expression: ($) =>
       prec.left(10, seq(field("object", $.expression), ".", field("member", $.identifier))),
 
+    // chain(e) (a : b) file;
+    key_list: ($) => seq("(", $.expression, repeat1(seq(":", $.expression)), ")"),
+
     parenthesized_expression: ($) => seq("(", $.expression, ")"),
+
+    // arr(*): every element of an array
+    all_elements: () => token(seq("(", "*", ")")),
 
     argument_list: ($) => seq("(", optional(seq($.expression, repeat(seq(":", $.expression)))), ")"),
 
@@ -663,22 +747,47 @@ module.exports = grammar({
 
     builtin_name: () => token(prec(1, /%[A-Za-z][A-Za-z0-9_]*/)),
 
-    _assignable: ($) => choice($.identifier, $.special_value, $.call_expression, $.member_expression),
+    _assignable: ($) => choice($.identifier, $.special_value, $.call_expression, $.member_expression, $.indexed_variable, alias($.indexed_member_expression, $.member_expression)),
+
+    // `m(idx) = 1;`: an all-letter index lexes as an opcode extender, so it is not a call_expression
+    indexed_variable: ($) =>
+      seq(field("name", $.identifier), field("index", $.opcode_extender)),
+
+    // `d(i).k = 1;`: the same, with a member access. Kept apart from member_expression so that
+    // the opcode-extender token is only lexed where an assignment target can start.
+    indexed_member_expression: ($) =>
+      prec.left(10, seq(
+        field("object", choice($.indexed_variable, alias($.indexed_member_expression, $.member_expression))),
+        ".",
+        field("member", $.identifier),
+      )),
 
     assignment_operator: () =>
       token(prec(3, choice("=", "+=", "-=", "*=", "/=", "**="))),
 
     _name: ($) => choice($.identifier, $.special_value),
 
-    identifier: () => token(/[A-Za-z_#$@§][A-Za-z0-9_#$@§-]*/),
+    // a hyphen joins keyword-like names (end-ds, on-error) only when a letter follows,
+    // so that `a-%len(b)` and `a-1` stay subtractions
+    identifier: () => token(/[A-Za-z_#$@§]([A-Za-z0-9_#$@§]|-[A-Za-z])*/),
 
-    special_value: () => token(/\*[A-Za-z0-9_]+[./]?('[^']*')?/),
+    special_value: () =>
+      token(choice(
+        /\*[A-Za-z0-9_]+[./]?('[^']*')?/,
+        /\*([Ii][Ss][Oo]|[Uu][Ss][Aa]|[Ee][Uu][Rr]|[Jj][Ii][Ss]|[Yy][Mm][Dd]|[Mm][Dd][Yy]|[Dd][Mm][Yy]|[Jj][Uu][Ll]|[Hh][Mm][Ss])-/,
+      )),
 
-    number: () => token(/[0-9]+(\.[0-9]+)?/),
+    number: () => token(/([0-9]+(\.[0-9]+)?|\.[0-9]+)([Ee][+-]?[0-9]+|[KkMmGg])?/),
 
     string: () => token(seq("'", repeat(choice(/[^']+/, "''")), "'")),
 
+    // x'C1' hex, b'0101' binary
     hex_string: () => token(/[Xx]'[0-9A-Fa-f]*'/),
+
+    binary_string: () => token(/[Bb]'[01]*'/),
+
+    // d'2003-01-02', t'12.30.00', z'2003-01-02-12.30.00.000000'
+    typed_literal: () => token(/[DdTtZzUuGg]'[^']*'/),
 
     colon: () => ":",
 
