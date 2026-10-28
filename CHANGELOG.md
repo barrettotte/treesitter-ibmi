@@ -2,6 +2,10 @@
 
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+- RPGLE fixed form: comments with `*` in position 7, blank specifications and compile-time data (see `test/corpus/fixed_form_specs.txt`).
+
 ## [0.1.0]
 
 - Initial Tree-sitter parsers for ILE RPG, RPG/400, ILE COBOL, CL, CMD, MI,

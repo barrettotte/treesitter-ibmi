@@ -975,7 +975,7 @@
       },
       "control_level": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "fixed_control_level",
@@ -1156,7 +1156,7 @@
       },
       "name": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "fixed_definition_name",
@@ -1272,7 +1272,7 @@
       },
       "name": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "fixed_file_name",
@@ -1580,7 +1580,7 @@
       },
       "name": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "fixed_procedure_name",

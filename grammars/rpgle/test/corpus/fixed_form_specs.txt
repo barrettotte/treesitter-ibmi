@@ -1,0 +1,102 @@
+==================
+Asterisk in position 7 is a comment
+==================
+
+     H DFTACTGRP(*NO)
+     /* decorated comment */
+     ** banner
+     D*  specification comment
+     C* calculation comment
+     D total           s             10i 0
+
+---
+
+(source_file
+  (fixed_control_specification
+    (fixed_keywords))
+  (fixed_comment)
+  (fixed_comment)
+  (fixed_comment)
+  (fixed_comment)
+  (fixed_definition_specification
+    (fixed_definition_name)
+    (fixed_external_description)
+    (fixed_data_structure_type)
+    (fixed_definition_type)
+    (fixed_from_position)
+    (fixed_to_position)
+    (fixed_internal_data_type)
+    (fixed_decimal_positions)))
+
+==================
+Blank specifications
+==================
+
+     H DFTACTGRP(*NO)
+     F
+     D
+     D total           s             10i 0
+     C
+     C                   EVAL      total = 1
+
+---
+
+(source_file
+  (fixed_control_specification
+    (fixed_keywords))
+  (fixed_file_specification)
+  (fixed_definition_specification)
+  (fixed_definition_specification
+    (fixed_definition_name)
+    (fixed_external_description)
+    (fixed_data_structure_type)
+    (fixed_definition_type)
+    (fixed_from_position)
+    (fixed_to_position)
+    (fixed_internal_data_type)
+    (fixed_decimal_positions))
+  (fixed_calculation_specification)
+  (fixed_calculation_specification
+    (fixed_control_level)
+    (fixed_conditioning_indicators)
+    (fixed_factor_1)
+    (fixed_operation)
+    (fixed_extended_factor_2)))
+
+==================
+Compile-time data after a bare **
+==================
+
+     H DFTACTGRP(*NO)
+     D month           s              3a   dim(2) ctdata perrcd(1)
+     C                   RETURN
+**
+Jan
+Category not found
+Agosto
+
+---
+
+(source_file
+  (fixed_control_specification
+    (fixed_keywords))
+  (fixed_definition_specification
+    (fixed_definition_name)
+    (fixed_external_description)
+    (fixed_data_structure_type)
+    (fixed_definition_type)
+    (fixed_from_position)
+    (fixed_to_position)
+    (fixed_internal_data_type)
+    (fixed_decimal_positions)
+    (fixed_keywords))
+  (fixed_calculation_specification
+    (fixed_control_level)
+    (fixed_conditioning_indicators)
+    (fixed_factor_1)
+    (fixed_operation))
+  (compile_time_data
+    (compile_time_data_header)
+    (compile_time_data_value)
+    (compile_time_data_value)
+    (compile_time_data_value)))

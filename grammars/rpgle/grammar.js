@@ -54,15 +54,21 @@ module.exports = grammar({
   ],
 
   rules: {
+    // Compile-time data runs to the end of the source: nothing but more data (or the
+    // next `**` header) may follow, so a data line such as `Category` is never read as a
+    // specification whose form letter happens to stand in position 6.
     source_file: ($) =>
-      repeat(choice(
-        $.fully_free_marker,
-        $._fixed_newline,
-        $.fixed_sql_statement,
-        $._fixed_line,
-        $.legacy_free_end,
-        $._top_level_item,
-      )),
+      seq(
+        repeat(choice(
+          $.fully_free_marker,
+          $._fixed_newline,
+          $.fixed_sql_statement,
+          $._fixed_line,
+          $.legacy_free_end,
+          $._top_level_item,
+        )),
+        repeat($.compile_time_data),
+      ),
 
     // The free-form lexer has already consumed columns 1-5 when this delimiter
     // follows a free statement; its opening delimiter remains scanner-owned.
@@ -113,7 +119,7 @@ module.exports = grammar({
       prec(10, seq($._h_form, optional($.fixed_keywords))),
 
     fixed_file_specification: ($) =>
-      prec(10, seq($._f_form, optionalNested($, [
+      prec(10, seq($._f_form, optional(optionalNested($, [
         ["name", $.fixed_file_name],
         ["file_type", $.fixed_file_type],
         ["designation", $.fixed_file_designation],
@@ -129,10 +135,10 @@ module.exports = grammar({
         ["device", $.fixed_device],
         [null, $._fixed_reserved],
         ["keywords", $.fixed_keywords],
-      ]))),
+      ])))),
 
     fixed_definition_specification: ($) =>
-      prec(10, seq($._d_form, optionalNested($, [
+      prec(10, seq($._d_form, optional(optionalNested($, [
         ["name", $.fixed_definition_name],
         ["external_description", $.fixed_external_description],
         ["data_structure_type", $.fixed_data_structure_type],
@@ -143,19 +149,19 @@ module.exports = grammar({
         ["decimal_positions", $.fixed_decimal_positions],
         [null, $._fixed_reserved],
         ["keywords", $.fixed_keywords],
-      ]))),
+      ])))),
 
     fixed_procedure_specification: ($) =>
-      prec(10, seq($._p_form, optionalNested($, [
+      prec(10, seq($._p_form, optional(optionalNested($, [
         ["name", $.fixed_procedure_name],
         [null, $._fixed_to_procedure_begin_end],
         ["kind", $.fixed_procedure_begin_end],
         [null, $._fixed_to_keywords],
         ["keywords", $.fixed_keywords],
-      ]))),
+      ])))),
 
     fixed_calculation_specification: ($) =>
-      prec(10, seq($._c_form, optionalNested($, [
+      prec(10, seq($._c_form, optional(optionalNested($, [
         ["control_level", $.fixed_control_level],
         ["conditioning", $.fixed_conditioning_indicators],
         ["factor_1", $.fixed_factor_1],
@@ -173,7 +179,7 @@ module.exports = grammar({
             ])),
           ),
         )],
-      ]))),
+      ])))),
 
     fixed_input_specification: ($) =>
       prec(10, seq(
@@ -234,7 +240,6 @@ module.exports = grammar({
 
     _top_level_item: ($) =>
       choice(
-        $.compile_time_data,
         $.procedure,
         $._body_item,
       ),
@@ -248,11 +253,15 @@ module.exports = grammar({
         repeat(field("value", $.compile_time_data_value)),
       ),
 
+    // `**CTDATA name`, or `**` / `** name` alone: what follows, up to the next header, is data
     compile_time_data_header: () =>
-      token(prec(3, seq(/\*\*[Cc][Tt][Dd][Aa][Tt][Aa]/, /[^\r\n]*/, /\r?\n/))),
+      token(prec(3, choice(
+        seq(/\*\*[Cc][Tt][Dd][Aa][Tt][Aa]/, /[^\r\n]*/, /\r?\n/),
+        seq("**", /[ \t]*/, optional(/[A-Za-z_][A-Za-z0-9_]*/), /[ \t]*/, /\r?\n/),
+      ))),
 
     compile_time_data_value: () =>
-      token(prec(2, seq(/[A-Za-z0-9.]+/, /[ \t]*\r?\n/))),
+      token(prec(2, seq(/[^\r\n]+/, /\r?\n/))),
 
     procedure: ($) =>
       seq(

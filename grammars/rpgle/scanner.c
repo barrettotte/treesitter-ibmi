@@ -191,6 +191,11 @@ static bool emit_c_slash_line(TSLexer *lexer, const bool *valid_symbols) {
   return true;
 }
 
+static bool is_alphanumeric(int32_t c) {
+  return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') ||
+         (c >= 'a' && c <= 'z');
+}
+
 bool tree_sitter_ibmi_rpgle_external_scanner_scan(void *payload,
                                                   TSLexer *lexer,
                                                   const bool *valid_symbols) {
@@ -365,14 +370,27 @@ bool tree_sitter_ibmi_rpgle_external_scanner_scan(void *payload,
   if ((column != 0 && column != 5) || at_line_end(lexer)) return false;
 
   /* Positions 1-5 are the sequence area; the form type must be in 6. */
-  if (column == 0) consume_to_column(lexer, 5);
+  bool sequence_blank = true; /* positions 1-5 hold only blanks or digits */
+  if (column == 0) {
+    while (!at_line_end(lexer) && lexer->get_column(lexer) < 5 &&
+           lexer->lookahead != '\t') {
+      if (lexer->lookahead != ' ' &&
+          (lexer->lookahead < '0' || lexer->lookahead > '9')) {
+        sequence_blank = false;
+      }
+      lexer->advance(lexer, false);
+    }
+    lexer->mark_end(lexer);
+  }
   if (lexer->get_column(lexer) != 5 || at_line_end(lexer)) return false;
 
   int32_t form = lexer->lookahead;
   lexer->advance(lexer, false);
 
-  /* A blank form type followed by * is also an RPG comment line. */
-  if (form == ' ' && lexer->get_column(lexer) == 6 &&
+  /* An asterisk in position 7 makes a comment line whatever stands in position
+   * 6: blank, a specification letter, or a decoration such as `/*` or `**`. A
+   * letter or digit is left alone so that free-form `amount*=rate;` is not hit. */
+  if (!is_alphanumeric(form) && lexer->get_column(lexer) == 6 &&
       lexer->lookahead == '*' && valid_symbols[FIXED_COMMENT]) {
     return emit_line(lexer, FIXED_COMMENT);
   }
@@ -418,5 +436,12 @@ bool tree_sitter_ibmi_rpgle_external_scanner_scan(void *payload,
   }
 
   if (!valid_symbols[symbol]) return false;
-  return emit_field(lexer, symbol, 6);
+  /* `Agosto` is a data line, not a blank O specification. */
+  if (at_line_end(lexer) && !sequence_blank) return false;
+  /* The form letter is already consumed. Do not go through emit_field: it
+   * refuses to emit at the end of a line, and a line holding nothing but the
+   * form letter is a valid blank specification. */
+  lexer->mark_end(lexer);
+  lexer->result_symbol = symbol;
+  return true;
 }
